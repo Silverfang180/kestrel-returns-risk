@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kestrel Returns Risk</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f5f5f5; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #3498db; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
+        button:hover { background-color: #2980b9; }
+
+        #results { margin-top: 30px; display: none; }
+        .result-box { padding: 20px; border-radius: 6px; margin-bottom: 20px; }
+        .high-risk { background-color: #fde8e8; border: 1px solid #f8b4b4; }
+        .low-risk { background-color: #e1f5fe; border: 1px solid #b3e5fc; }
+        .recommendation { font-size: 24px; font-weight: bold; margin: 0 0 10px 0; }
+        .score { font-size: 18px; margin-bottom: 15px; }
+
+        .reasons { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e9ecef; }
+        .reasons h3 { margin-top: 0; }
+        .reason-item { display: flex; align-items: center; margin-bottom: 8px; }
+        .direction-raises { color: #d32f2f; font-weight: bold; margin-right: 10px; }
+        .direction-lowers { color: #2e7d32; font-weight: bold; margin-right: 10px; }
+
+        .caveats { margin-top: 20px; font-size: 12px; color: #666; border-top: 1px dashed #ccc; padding-top: 10px; }
+
+        .error { background-color: #ffebee; color: #c62828; padding: 15px; border-radius: 4px; margin-top: 20px; display: none; border: 1px solid #ef9a9a; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Returns Risk Scorer</h1>
+
+        <form id="predictForm">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label for="order_id">Order ID (Optional)</label>
+                    <input type="text" id="order_id" name="order_id">
+                </div>
+
+                <div class="form-group">
+                    <label for="family">Product Family *</label>
+                    <select id="family" name="family" required>
+                        <option value="">-- Select Family --</option>
+                        <option value="Air Fryer">Air Fryer</option>
+                        <option value="Ceiling Fan">Ceiling Fan</option>
+                        <option value="Induction Cooktop">Induction Cooktop</option>
+                        <option value="Mixer Grinder">Mixer Grinder</option>
+                        <option value="Robot Vacuum">Robot Vacuum</option>
+                        <option value="Room Heater">Room Heater</option>
+                        <option value="Water Purifier">Water Purifier</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="sales_channel">Sales Channel *</label>
+                    <select id="sales_channel" name="sales_channel" required>
+                        <option value="app">App</option>
+                        <option value="web">Web</option>
+                        <option value="marketplace">Marketplace</option>
+                        <option value="partner_outlet">Partner Outlet</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="payment_mode">Payment Mode *</label>
+                    <select id="payment_mode" name="payment_mode" required>
+                        <option value="prepaid_upi">Prepaid UPI</option>
+                        <option value="prepaid_card">Prepaid Card</option>
+                        <option value="cod">Cash on Delivery</option>
+                        <option value="emi">EMI</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="is_gift">Is Gift? *</label>
+                    <select id="is_gift" name="is_gift" required>
+                        <option value="N">No</option>
+                        <option value="Y">Yes</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="shield_member">Shield Member? *</label>
+                    <select id="shield_member" name="shield_member" required>
+                        <option value="N">No</option>
+                        <option value="Y">Yes</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="discount_pct">Discount % *</label>
+                    <input type="number" id="discount_pct" name="discount_pct" min="0" max="100" step="0.1" value="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="promised_delivery_days">Promised Delivery Days *</label>
+                    <input type="number" id="promised_delivery_days" name="promised_delivery_days" min="0" step="1" value="3" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="customer_prior_orders">Prior Orders *</label>
+                    <input type="number" id="customer_prior_orders" name="customer_prior_orders" min="0" step="1" value="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="customer_prior_returns">Prior Returns *</label>
+                    <input type="number" id="customer_prior_returns" name="customer_prior_returns" min="0" step="1" value="0" required>
+                </div>
+            </div>
+
+            <button type="submit" style="margin-top: 15px;">Score Order</button>
+        </form>
+
+        <div id="errorBox" class="error"></div>
+
+        <div id="results">
+            <div id="resultCard" class="result-box">
+                <p class="recommendation" id="recommendationText"></p>
+                <p class="score">Return Probability: <strong id="scoreValue"></strong> (Threshold: <span id="thresholdValue"></span>)</p>
+            </div>
+
+            <div class="reasons">
+                <h3>Top Reasons</h3>
+                <div id="reasonsList"></div>
+            </div>
+
+            <div class="caveats" id="caveatsList">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const errorBox = document.getElementById('errorBox');
+            const resultsBox = document.getElementById('results');
+
+            errorBox.style.display = 'none';
+            resultsBox.style.display = 'none';
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            // Convert numbers
+            data.discount_pct = parseFloat(data.discount_pct);
+            data.promised_delivery_days = parseFloat(data.promised_delivery_days);
+            data.customer_prior_orders = parseFloat(data.customer_prior_orders);
+            data.customer_prior_returns = parseFloat(data.customer_prior_returns);
+
+            if (data.order_id === "") delete data.order_id;
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    let errorMsg = result.detail || "Validation Error";
+                    if (Array.isArray(result.detail)) {
+                        errorMsg = result.detail.map(err => err.msg).join(', ');
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                // Success
+                const resultCard = document.getElementById('resultCard');
+                const recText = document.getElementById('recommendationText');
+
+                if (result.recommend_call) {
+                    resultCard.className = 'result-box high-risk';
+                    recText.textContent = 'CONFIRMATION CALL RECOMMENDED';
+                    recText.style.color = '#c62828';
+                } else {
+                    resultCard.className = 'result-box low-risk';
+                    recText.textContent = 'STANDARD DISPATCH';
+                    recText.style.color = '#1565c0';
+                }
+
+                document.getElementById('scoreValue').textContent = (result.score * 100).toFixed(1) + '%';
+                document.getElementById('thresholdValue').textContent = (result.threshold * 100).toFixed(1) + '%';
+
+                // Reasons
+                const reasonsList = document.getElementById('reasonsList');
+                reasonsList.innerHTML = '';
+                result.reasons.forEach(r => {
+                    const div = document.createElement('div');
+                    div.className = 'reason-item';
+                    const dirSpan = document.createElement('span');
+                    dirSpan.className = r.direction === 'raises' ? 'direction-raises' : 'direction-lowers';
+                    dirSpan.textContent = r.direction === 'raises' ? '↑' : '↓';
+                    div.appendChild(dirSpan);
+                    div.appendChild(document.createTextNode(r.text));
+                    reasonsList.appendChild(div);
+                });
+
+                // Caveats
+                const caveatsList = document.getElementById('caveatsList');
+                caveatsList.innerHTML = '<strong>Caveats:</strong><ul>' +
+                    result.caveats.map(c => `<li>${c}</li>`).join('') +
+                    '<li>' + result.threshold_basis + '</li>' +
+                    '</ul>';
+
+                resultsBox.style.display = 'block';
+
+            } catch (err) {
+                errorBox.textContent = "Error: " + err.message;
+                errorBox.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

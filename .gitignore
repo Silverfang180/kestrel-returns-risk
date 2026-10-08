@@ -1,0 +1,11 @@
+data/
+*.csv
+predictions*
+artifacts/
+
+.venv/
+.clean_venv/
+.pytest_cache/
+
+__pycache__/
+*.pyc
