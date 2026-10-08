@@ -63,23 +63,23 @@ The model does not classify at 0.5. Instead, it flags orders at or above an econ
 * Cost of one return = ₹1,150
 * Break-even risk: ₹45 / (0.35 × ₹1,150) = 0.1118 ≈ 0.112
 
-At threshold 0.112 on the W3 validation window:
-* Flagged share: 31.09%
-* Precision: 25.72%
+At threshold 0.112 on the W3 validation window (2,126 orders, 245 returns; validation-window estimates, not guarantees):
+* Flagged share: 31.04%
+* Precision: 25.76%
 * Recall: 69.39%
-* Estimated net value: ~₹38,680 (per window scale)
+* Estimated net value: approximately ₹38,725 over the validation window
 
-**Monthly Economic Interpretation:**
-At approximately 700 orders/month, the 0.112 threshold translates to:
+**Monthly Economic Interpretation (extrapolation, not a guarantee):**
+Scaling the W3 validation-window estimates to approximately 700 orders/month (an extrapolation from validation results and pilot assumptions), the 0.112 threshold translates to:
 * Roughly 218 orders would be called
 * Roughly 20 returns could be prevented under the 35% pilot assumption
 * Approximately 61 returns would remain
-* Estimated net value is about ₹12.7k/month under the stated assumptions.
-*Important: These are validation estimates based on policy assumptions, not guaranteed savings. The 35% prevention rate is an operating assumption, not causally proven by the model.*
+* Estimated net value is about ₹12,750/month under the stated assumptions (₹38,725 scaled by 700 / 2,126).
+*Important: These are extrapolated validation estimates based on policy assumptions, not guaranteed savings. The 35% prevention rate comes from a pilot and is an operating assumption; it is not causally proven by this model and may not transfer to the highest-risk orders.*
 
 **Error Analysis (W3 @ 0.112 Threshold):**
 * **False Negatives:** Missed roughly 75 out of 245 actual returns. Many had no prior returns, ~85% were non-Shield members, and ~72% were prepaid/EMI. The weakest area identified was first-time prepaid customers.
-* **False Positives:** Flagged 493 non-returning orders. Approximately 38% were Shield members, 56% were COD, and 24.5% had a prior-return history.
+* **False Positives:** Flagged 490 non-returning orders (660 flagged, 170 of them true returns). Approximately 38% were Shield members, 56% were COD, and 24.5% had a prior-return history.
 
 ## API & UI
 
@@ -89,7 +89,7 @@ The service exposes three endpoints via FastAPI:
 * `POST /predict`
 * `GET /` (Static UI)
 
-`POST /predict` accepts one order record (JSON) and validates enums, numeric fields, and logical prior-count relationships. Extra ignored fields are safely discarded. Missing or corrupt model artifacts result in an HTTP 503 rather than a silent failure.
+`POST /predict` accepts one order record (JSON) and validates enums, numeric fields, and logical prior-count relationships. Extra ignored fields are safely discarded. If the model artifacts are missing, the service still starts, `GET /health` reports `unhealthy`, and `POST /predict` returns HTTP 503 rather than a fake prediction. A corrupt or incompatible artifact is not handled that way: startup can fail while loading it, so artifacts should be regenerated with `train.py` in the same environment.
 The API returns a risk score/probability, a recommendation flag, deterministic human-readable reasons, and a list of ignored fields when applicable. No outbound network calls, external paid API keys, or LLMs are used by the product.
 
 **UI:**
@@ -122,10 +122,23 @@ pip install -r requirements.txt
 ```
 
 **2. Local Data Placement:**
-Place your permitted local CSV files (`train.csv`, `test_unlabelled.csv`) into the `data/` directory. Due to privacy and scale, raw datasets are intentionally ignored and not part of the public GitHub repository.
+The training, validation and scoring workflow requires these four private, supplied Kestrel task files:
+```text
+data/train.csv
+data/test_unlabelled.csv
+data/customers.csv
+data/products.csv
+```
+They are not included in the public repository (`data/` and `*.csv` are git-ignored) because of the data-handling policy. Without all four files, `validate.py`, `train.py` and `score.py` stop with a file-not-found error.
+
+**What a public clone can and cannot do:**
+* A public clone alone installs successfully and can start the service (`python run.py`), and the UI loads.
+* A public clone alone contains neither the private Kestrel dataset nor a fitted model artifact. It cannot reproduce validation, training or `predictions.csv`, and `POST /predict` returns HTTP 503 until the artifacts exist.
+* With the four supplied files in `data/`, the full workflow below reproduces the validation reports, the model artifacts, `predictions.csv` and the test suite.
+* With previously generated local artifacts (and no data), the service starts healthy and `POST /predict` works.
 
 **3. Run Validation & Training:**
-To start the API, model artifacts must exist locally first. A clean checkout should train the model before starting the service.
+`artifacts/model.joblib` and `artifacts/model_meta.json` are intentionally git-ignored and are created locally by `train.py`. They must exist locally before `/predict` can return model predictions, so a clean checkout should train the model before starting the service. Note that `validate.py` rewrites the generated files in `reports/`, including the tracked `reports/validation_summary.json` (differences are floating-point noise).
 ```bash
 # Windows
 $env:PYTHONPATH="src"
@@ -141,7 +154,7 @@ python src/kestrel_returns/score.py
 ```
 
 **4. Run Automated Tests:**
-The implementation currently has 19 automated tests covering the API, feature handling, loaders, and prediction behavior.
+The implementation currently has 19 automated tests covering the API, feature handling, loaders, and prediction behavior. All 19 pass once the four data files are in `data/` and `train.py` and `score.py` have been run. On a public clone without the private data and artifacts, the data-dependent tests (loader, prediction-file and healthy-API tests) fail by design; the feature-contract and API-validation tests still pass.
 ```bash
 # Windows
 $env:PYTHONPATH="src"
@@ -159,7 +172,7 @@ The recommended way to start the existing FastAPI service and static UI is using
 python run.py
 ```
 
-This starts the existing FastAPI service. The static UI is served through the same service and can be opened in a browser at `http://127.0.0.1:8000/`.
+This starts the existing FastAPI service. The static UI is served through the same service and can be opened in a browser at `http://127.0.0.1:8000/`. The service reports `healthy` and returns model predictions only when the locally generated artifacts from step 3 are present.
 
 *(Optional alternative, manual startup):*
 ```bash
@@ -185,6 +198,6 @@ I built this project individually and used AI tools as development assistance. A
 
 ## Submission Links
 
-* GitHub Repository: TODO
+* GitHub Repository: https://github.com/Silverfang180/kestrel-returns-risk
 * Three-minute screen recording: TODO
 * Public Google Drive submission folder: TODO
