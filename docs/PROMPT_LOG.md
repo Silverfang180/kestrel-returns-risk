@@ -8,8 +8,8 @@ Entries or fields marked [confirm] could not be verified from the project record
 - **Independent re-checks by AI:** a read-only audit re-ran validation, training, scoring and the test suite in an isolated environment and reproduced the committed reports.
 - **Suggestions corrected or discarded:** see the table and the list below.
 - **The product itself calls no LLM and no paid model API.** There is no network, LLM or API-key code in `src/`; the service runs locally with no key.
-- **Costs:** paid API cost of the product: none. Subscription or usage costs of the AI tools (ChatGPT, Claude, Antigravity): [confirm]. Paid API usage by the development tools: [confirm].
-- **Model names/versions used inside each tool:** [confirm] for ChatGPT, Claude and Antigravity.
+- **Costs:** paid API cost of the product: none. Subscription or usage costs of the AI tools (ChatGPT, Claude, Antigravity): ₹0. Paid API usage by the development tools: ₹0. The app runs locally and has no deployment or hosting costs.
+- **Model names/versions used inside each tool:** not consistently recorded for ChatGPT, Claude and Antigravity.
 
 ## Log
 | # | Date | Tool | Purpose | Important instruction / content | Result | Discarded | Changed a decision? |
