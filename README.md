@@ -199,5 +199,5 @@ I built this project individually and used AI tools as development assistance. A
 ## Submission Links
 
 * GitHub Repository: https://github.com/Silverfang180/kestrel-returns-risk
-* Three-minute screen recording: TODO
-* Public Google Drive submission folder: TODO
+* Three-minute screen recording: https://drive.google.com/file/d/18mqmPLdkEddB89gdXa21y2A9dpg4i3Uc/view?usp=sharing
+* Public Google Drive submission folder: https://drive.google.com/drive/folders/1O0rKxz4TVL1XOxmzwobAFjRRzXZUkWjz?usp=sharing
